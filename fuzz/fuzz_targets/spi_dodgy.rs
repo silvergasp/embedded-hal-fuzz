@@ -1,37 +1,34 @@
 #![no_main]
 /// This fuzz test should pass.
-use embedded_hal::spi::FullDuplex;
+use embedded_hal::spi::blocking::SpiBus;
 use embedded_hal_fuzz as hal_fuzz;
+use hal_fuzz::{shared_data::FuzzData, spi::{DefaultSpiError, SpiFuzz}};
 use libfuzzer_sys::fuzz_target;
 
-struct GoodDriver<T: FullDuplex<u8>> {
+struct GoodDriver<T: SpiBus> {
     spi: T,
 }
 
-impl<T: FullDuplex<u8>> GoodDriver<T> {
+impl<T: SpiBus> GoodDriver<T> {
     fn new(spi: T) -> Self {
         Self { spi }
     }
 
     fn get_scaled_value(&mut self) -> Result<f32, ()> {
-        self.spi.send(0x01).map_err(|_| ())?;
-        let a = self.spi.read().map_err(|_| ())?;
-        // Obviously can panic sometimes.
-        if a == 0xFF {
-            panic!("Shouldn't return 0xFF");
+        let mut buffer = [0u8; 1];
+        self.spi.transfer_in_place(&mut buffer).map_err(|_| ())?;
+        if buffer[0] == 0xFF {
+            panic!("This will fail the fuzz test!!")
         }
-        Ok(a as f32)
+        Ok(buffer[0] as f32)
     }
 }
-
-type I2cError = ();
 
 fuzz_target!(|data: &[u8]| {
     // Ignore empty inputs.
     if data.len() > 0 {
-        use hal_fuzz::shared_data::FuzzData;
         let data = FuzzData::new(data);
-        let spi: hal_fuzz::spi::SpiFuzz<'_, I2cError> = hal_fuzz::spi::SpiFuzz::new(data);
+        let spi: SpiFuzz<'_, DefaultSpiError> = SpiFuzz::new(data);
         let mut driver = GoodDriver::new(spi);
         let _ = driver.get_scaled_value();
     }

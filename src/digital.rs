@@ -1,15 +1,22 @@
 use crate::error::FuzzedError;
 use crate::shared_data::FuzzData;
+use core::fmt::Debug;
 use core::marker::PhantomData;
-use embedded_hal::digital::v2::{InputPin, OutputPin};
+use embedded_hal::digital::{
+    blocking::{InputPin, OutputPin},
+    ErrorType,
+};
+
+pub trait Error<'a>: Debug + FuzzedError<'a> {}
+impl<'a, E: Debug + FuzzedError<'a>> Error<'a> for E {}
 
 /// A fuzzed backend for the digital input trait.
-pub struct InputPinFuzz<'a, E: FuzzedError<'a>> {
+pub struct InputPinFuzz<'a, E: Error<'a>> {
     data: FuzzData<'a>,
     _e: PhantomData<E>,
 }
 
-impl<'a, E: FuzzedError<'a>> InputPinFuzz<'a, E> {
+impl<'a, E: Error<'a>> InputPinFuzz<'a, E> {
     pub fn new(data: FuzzData<'a>) -> Self {
         InputPinFuzz {
             data,
@@ -19,13 +26,11 @@ impl<'a, E: FuzzedError<'a>> InputPinFuzz<'a, E> {
 
     fn pin_state(&self) -> Result<bool, E> {
         // Randomly create an error.
-        let mut data = match self.data.iter.lock() {
+        let mut data = match self.data.iter.try_lock() {
             Ok(data) => data,
             Err(_) => return Err(Default::default()),
         };
-        if let Some(err) = E::new_err(&mut *data) {
-            return Err(err);
-        }
+        E::maybe_err(&mut *data)?;
         let byte = data.next();
         match byte {
             Some(x) if *x > 128 => Ok(false),
@@ -34,9 +39,11 @@ impl<'a, E: FuzzedError<'a>> InputPinFuzz<'a, E> {
     }
 }
 
-impl<'a, E: FuzzedError<'a>> InputPin for InputPinFuzz<'a, E> {
+impl<'a, E: FuzzedError<'a> + Debug> ErrorType for InputPinFuzz<'a, E> {
     type Error = E;
+}
 
+impl<'a, E: Error<'a>> InputPin for InputPinFuzz<'a, E> {
     fn is_high(&self) -> Result<bool, Self::Error> {
         self.pin_state()
     }
@@ -60,30 +67,26 @@ impl<'a, E: FuzzedError<'a>> OutputPinFuzz<'a, E> {
         }
     }
 
-    fn potential_error(&self) -> Result<(), E> {
+    fn maybe_err(&self) -> Result<(), E> {
         // Randomly create an error.
-        let mut data = match self.data.iter.lock() {
+        let mut data = match self.data.iter.try_lock() {
             Ok(data) => data,
             Err(_) => return Err(Default::default()),
         };
-        if let Some(err) = E::new_err(&mut *data) {
-            return Err(err);
-        }
+        E::maybe_err(&mut *data)?;
         Ok(())
     }
 }
 
-impl<'a, E: FuzzedError<'a>> OutputPin for OutputPinFuzz<'a, E> {
+impl<'a, E: Error<'a>> ErrorType for OutputPinFuzz<'a, E> {
     type Error = E;
+}
 
+impl<'a, E: Error<'a>> OutputPin for OutputPinFuzz<'a, E> {
     fn set_low(&mut self) -> Result<(), Self::Error> {
-        // set_low is an output, so we ignore it here.
-        // Potentially create an error.
-        self.potential_error()
+        self.maybe_err()
     }
     fn set_high(&mut self) -> Result<(), Self::Error> {
-        // set_high is an output, so we ignore it here.
-        // Potentially create an error.
-        self.potential_error()
+        self.maybe_err()
     }
 }

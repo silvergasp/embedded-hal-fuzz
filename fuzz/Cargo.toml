@@ -10,7 +10,7 @@ cargo-fuzz = true
 
 [dependencies]
 libfuzzer-sys = "0.4"
-embedded-hal = {version="0.2.7", features=["unproven"]}
+embedded-hal = {version = "1.0.0-alpha.8"}
 
 [dependencies.embedded-hal-fuzz]
 path = ".."
@@ -58,17 +58,5 @@ doc = false
 [[bin]]
 name = "multiple_io"
 path = "fuzz_targets/multiple_io.rs"
-test = false
-doc = false
-
-[[bin]]
-name = "adc_good"
-path = "fuzz_targets/adc_good.rs"
-test = false
-doc = false
-
-[[bin]]
-name = "adc_dodgy"
-path = "fuzz_targets/adc_dodgy.rs"
 test = false
 doc = false

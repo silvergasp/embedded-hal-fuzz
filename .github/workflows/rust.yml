@@ -28,5 +28,3 @@ jobs:
       run: cargo test --verbose
     - name: Build fuzz tests
       run: cargo +nightly fuzz build
-    - name: Lint
-      run: cargo clippy -- -Dwarnings

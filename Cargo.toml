@@ -10,7 +10,7 @@ license = "MIT"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-embedded-hal = {version = "0.2.7", features = ["unproven"]}
+embedded-hal = {version = "1.0.0-alpha.8"}
 nb = "1.0.0"
 
 [dev-dependencies]

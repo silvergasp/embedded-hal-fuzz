@@ -1,6 +1,6 @@
 #![no_main]
 /// This fuzz test should pass.
-use embedded_hal::digital::v2::InputPin;
+use embedded_hal::digital::blocking::InputPin;
 use embedded_hal_fuzz as hal_fuzz;
 use libfuzzer_sys::fuzz_target;
 

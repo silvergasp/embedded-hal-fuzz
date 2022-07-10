@@ -37,12 +37,12 @@
 //! Let's create a small driver with an intentional bug. We will create a fuzz
 //! target for this driver to see if it will fail.
 //! ```
-//! use embedded_hal::blocking::i2c::{Read, WriteRead};
-//! struct DodgyDriver<T: Read + WriteRead> {
+//! use embedded_hal::i2c::blocking::I2c;
+//! struct DodgyDriver<T: I2c> {
 //!     i2c: T,
 //! }
 //!
-//! impl<T: Read + WriteRead> DodgyDriver<T> {
+//! impl<T: I2c> DodgyDriver<T> {
 //!     fn new(i2c: T) -> Self {
 //!         Self { i2c }
 //!     }
@@ -63,11 +63,11 @@
 //! Lets go ahead and modify our fuzz target to test this driver.
 //! ```no_run
 //! #![no_main]
-//! # use embedded_hal::blocking::i2c::{Read, WriteRead};
-//! # struct DodgyDriver<T: Read + WriteRead> {
+//! # use embedded_hal::i2c::blocking::I2c;
+//! # struct DodgyDriver<T: I2c> {
 //! #     i2c: T,
 //! # }
-//! # impl<T: Read + WriteRead> DodgyDriver<T> {
+//! # impl<T: I2c> DodgyDriver<T> {
 //! #     fn new(i2c: T) -> Self {
 //! #         Self { i2c }
 //! #     }
@@ -85,14 +85,13 @@
 //! use embedded_hal_fuzz as hal_fuzz;
 //! use libfuzzer_sys::fuzz_target;
 //!
-//! type I2cError = ();
 //!
 //! fuzz_target!(|data: &[u8]| {
 //!     // Ignore empty inputs.
 //!     if data.len() > 0 {
 //!         use hal_fuzz::shared_data::FuzzData;
 //!         let data = FuzzData::new(data);
-//!         let i2c: hal_fuzz::i2c::I2cFuzz<'_, I2cError> = hal_fuzz::i2c::I2cFuzz::new(data);
+//!         let i2c: hal_fuzz::i2c::I2cFuzz = hal_fuzz::i2c::I2cFuzz::new(data);
 //!         let mut driver = DodgyDriver::new(i2c);
 //!         // NOTE: we don't care about getting an error only about a crash, so
 //!         // we discard the result.
@@ -148,9 +147,10 @@
 //! For some examples of how to use the fuzzer, checkout the targets in the
 //! 'fuzz/fuzz_targets' directory of this repository.
 
-pub mod adc;
+pub mod delay;
 pub mod digital;
 pub mod error;
+pub mod fuzzed_type;
 pub mod i2c;
 pub mod serial;
 pub mod shared_data;
