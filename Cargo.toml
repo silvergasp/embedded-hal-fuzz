@@ -13,7 +13,7 @@ license = "MIT"
 arbitrary = { version = "1.3.2", features = ["derive"] }
 embedded-hal = {version = "1.0.0"}
 nb = "1.1.0"
-thiserror = "1.0.57"
+thiserror = "1.0.58"
 
 [dev-dependencies]
 num-traits = "0.2"
